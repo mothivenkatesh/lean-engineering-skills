@@ -32,6 +32,15 @@ Uses: interface definitions (from SPEC.md) and table ownership (from SCHEMA.md) 
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** Either SPEC.md with interface definitions, or existing code to review. Cannot draw module boundaries from a verbal description alone.
+- **Refuse if:** No interfaces are defined and no code exists. Run `/spec` first.
+- **Mandatory:** Run `npx madge --circular src/` before declaring no circular dependencies. Do not assert absence without this check.
+- **All 5 SOLID principles are mandatory.** Apply each and state the verdict. Do not skip any principle because "it doesn't apply here."
+- **Refuse if:** Business logic imports an external SDK directly (Stripe, Cloudinary, SendGrid). Flag it and propose the interface extraction.
+
+---
+
 ## S — SINGLE RESPONSIBILITY
 
 One module, one reason to change.

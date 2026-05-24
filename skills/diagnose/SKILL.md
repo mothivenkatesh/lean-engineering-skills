@@ -31,6 +31,15 @@ Consumes: An incident or bug report. Optionally: `DEPLOY.md` from `/ops-ready` (
 
 **The rule:** Never jump from REPRODUCE to FIX. The gap between them is everything.
 
+---
+
+## HARD CONSTRAINTS
+- **Required:** A specific error message, failing test output, or exact observable broken behavior. "It's broken" or "it's not working" is not enough — ask for the exact symptom before proceeding.
+- **Refuse if:** User wants to apply a fix before the root cause is stated in one sentence. Write the root cause sentence first.
+- **Refuse if:** User wants to change multiple things simultaneously to "see if it helps." One hypothesis at a time. Always.
+- **Mandatory:** Write a regression test before closing the diagnosis. A bug without a test comes back.
+- **Never fix the symptom if the root cause is fixable.** Defensive code around a symptom hides the problem from future engineers.
+
 Fixing without understanding the root cause creates one of three outcomes: the bug comes back, a new bug appears, or both.
 
 ---

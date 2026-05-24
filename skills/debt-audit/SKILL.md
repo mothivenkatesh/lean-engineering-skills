@@ -19,6 +19,15 @@ Looks at: the current codebase, git history, test coverage, and incident history
 
 **TRIGGER:** Velocity is slowing. Incident patterns suggest structural problems. Periodic (every few sprints). Or before a major refactor.
 
+---
+
+## HARD CONSTRAINTS
+- **Required:** A specific module, file, or bounded area. "Audit the codebase" is too broad — ask for a specific area before starting.
+- **Refuse to classify debt from memory.** Read the code first. Every classification requires reading the actual file.
+- **Mandatory:** Build test coverage before paying down design debt. Do not restructure code that has no tests.
+- **Every debt item requires a score and done criteria.** Items without scores cannot be prioritized. Items without done criteria never get finished.
+- **Refuse if:** User wants to rewrite everything at once. Identify the strangler pattern. Start with the highest-compounding item only.
+
 **CYCLE:**
 1. Read the code before classifying it (never from memory or assumptions)
 2. Classify every debt item by type

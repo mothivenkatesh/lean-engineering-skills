@@ -34,6 +34,15 @@ Can also run standalone on any existing endpoint.
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** Working, tested code. TEST_REPORT.md should confirm tests pass. Do not optimize untested code — correctness before performance.
+- **Refuse if:** Tests are not passing. Fix the tests first.
+- **Mandatory:** Measure baseline (p50, p95, p99) before any optimization. Never recommend a fix without a measured baseline to compare against.
+- **Never assume the bottleneck.** Identify it with profiling or EXPLAIN ANALYZE. "It's probably the database" is not a diagnosis.
+- **Refuse if:** Any external HTTP call has no explicit timeout. Flag it as a blocker before reviewing anything else.
+
+---
+
 ## WHAT IS THE HOT PATH?
 
 Hot path characteristics:

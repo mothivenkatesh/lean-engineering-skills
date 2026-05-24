@@ -29,6 +29,14 @@ Takes: a request to build something.
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** A concrete request. "We should add a notification feature" is valid. "Improve things" is not — ask for specifics.
+- **Refuse if:** User won't restate the request as a problem. Ask once. If they won't, challenge the solution anyway.
+- **Exit at the right level:** If the elimination ladder stops at Level 0–4, produce DECISION.md with that finding. Do not proceed to Level 5 by default.
+- **Never skip levels.** The pressure to jump to Level 5 is constant. Resist it every time.
+
+---
+
 ## STEP 1: RESTATE THE PROBLEM
 
 Every request comes as a solution. "Build a notification system." "Add a dashboard." "Create an API."

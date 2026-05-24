@@ -34,6 +34,15 @@ If SPEC.md doesn't exist: run `/spec` first. You cannot stress-test a system tha
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** SPEC.md from `/spec` with behaviors, interface, and data model sections complete.
+- **Refuse if:** The system is too vague to imagine failing. Ask for SPEC.md first.
+- **All 7 failure mode categories are mandatory.** Do not skip any. Skipping is how the worst failures survive review.
+- **Critical findings block shipping.** Do not produce a Go verdict while critical findings are unresolved.
+- **Rule Zero is non-negotiable:** Read git history before touching any existing code. No exceptions.
+
+---
+
 ## STEP 1: STATE WHAT IS BEING BUILT
 
 One paragraph. Concrete. If it's vague, the failure analysis will be vague.

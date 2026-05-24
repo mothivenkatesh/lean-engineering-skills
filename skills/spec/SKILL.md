@@ -35,6 +35,15 @@ If DECISION.md doesn't exist: run `/challenge` first. Don't spec a solution befo
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** DECISION.md from `/challenge` with recommendation "build it." If DECISION.md doesn't exist, run `/challenge` first.
+- **Refuse if:** DECISION.md recommendation is "don't build" or "get clarity first." Don't spec a rejected proposal.
+- **Refuse if:** Any behavior in Step 3 cannot be written as GIVEN/WHEN/THEN. Force specificity before proceeding.
+- **Scope boundary:** Spec only what DECISION.md approved. No expansion during speccing.
+- **Every edge case requires an exact expected outcome.** "Throw an error" is not a spec.
+
+---
+
 ## STEP 1: ONE-SENTENCE PROBLEM
 
 Write the problem in one sentence. No solution language.

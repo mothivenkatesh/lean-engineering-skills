@@ -35,6 +35,15 @@ Never skip RED. Never go to REFACTOR while RED. Never write more code than GREEN
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** At least one behavior written as GIVEN/WHEN/THEN, or a bug with exact reproduction steps. "Write tests for the user module" with no specific behavior is not enough — ask for the behavior.
+- **Refuse if:** User wants to write tests after code is already written. That is verification, not TDD. Acknowledge the code exists, but write tests against the interface, not the implementation.
+- **The RED phase is non-negotiable.** If the test passes before any implementation is written: stop. The test is wrong or the behavior already exists. Do not proceed until the test fails first.
+- **One behavior per test.** Never combine behaviors into one test. If a test name requires "and," split it.
+- **Bug fix protocol is mandatory:** Write a reproducing test before touching the fix. No exceptions.
+
+---
+
 ## PHASE 1: UNDERSTAND BEFORE YOU WRITE
 
 Before any test, answer:

@@ -27,6 +27,15 @@ Uses: failure modes and observability gaps from RISK.md; latency baseline from P
 
 If no: it's not ready.
 
+---
+
+## HARD CONSTRAINTS
+- **Required:** Code is tested (TEST_REPORT.md) and hot-path reviewed (PERF.md). Or explicit written acknowledgment these were skipped.
+- **Refuse if:** No rollback procedure is written. A rollback procedure is not optional — write it before the deploy checklist proceeds.
+- **Refuse if:** Any database migration is not classified against the safe/unsafe migration table. "I think it's safe" is not a classification.
+- **All 5 sections are mandatory.** A partial ops-ready check is not ops-ready.
+- **Never mark NOT READY as READY.** If critical gaps exist, the verdict is NOT READY regardless of timeline pressure.
+
 Charity Majors: "No one should be promoted to senior software engineer unless they are proficient in production and know how to own their software by writing it, deploying it, and debugging it in production through the lens of their instrumentation."
 
 ---

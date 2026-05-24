@@ -33,6 +33,16 @@ Can also run standalone on an existing schema or query.
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** A concrete schema (SQL or ORM definition), a specific query, or a SPEC.md data model section. "Review the database" with no specifics is too broad — ask for the concrete artifact.
+- **Refuse if:** User wants to add Redis, Elasticsearch, or any new database without first documenting that all Postgres-level optimizations are exhausted.
+- **Mandatory:** Run EXPLAIN ANALYZE on every hot-path query. Do not classify a query as efficient without it.
+- **Mandatory:** Check every foreign key for a missing index. Postgres does not add these automatically.
+- **Money as FLOAT is a hard block.** Refuse to approve any schema that stores money as FLOAT or DECIMAL. Always INTEGER.
+- **Unsafe migrations must be called out explicitly.** Do not let a rename, type change, or NOT NULL addition pass as "safe."
+
+---
+
 ## THE POSTGRES RULE
 
 Use Postgres for everything until Postgres measurably can't handle it.

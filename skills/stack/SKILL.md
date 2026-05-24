@@ -31,6 +31,15 @@ Can also run standalone at the start of any project.
 
 ---
 
+## HARD CONSTRAINTS
+- **Required:** A concrete project or feature. Can run standalone without DECISION.md.
+- **Refuse if:** User wants to deviate from the canonical stack without a written reason. Ask for the reason first — then document it in STACK.md.
+- **Refuse if:** User wants to deploy Strapi to Vercel. This will not work. Redirect to Railway/Render/Fly.io.
+- **Never evaluate alternative stacks.** The stack is decided. This skill locks it, not debates it.
+- **Refuse if:** User asks to store money as FLOAT. Always INTEGER in smallest unit (paise, cents).
+
+---
+
 ## THE STACK
 
 Three decisions. Already made. Don't remake them.
