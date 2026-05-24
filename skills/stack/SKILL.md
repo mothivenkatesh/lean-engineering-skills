@@ -1,20 +1,47 @@
 ---
 name: stack
-description: "Master guardrail skill for controlled block-by-block project building. Enforces the canonical tech stack: Strapi v5 (backend/CMS) + frappe-ui design tokens (UI) + Vercel (frontend hosting). Use at the start of ANY new project, feature, or component. Trigger on: 'start a new project', 'build this app', 'new feature', 'set up the project', 'what stack should I use', 'how do I structure this'. This skill controls deviation — no technology decisions are made without consulting it first."
+description: "Locks the technology stack for every project. Enforces: Strapi v5 for backend/CMS, frappe-ui design tokens for UI, Vercel for frontend hosting. Run at the start of any new project, feature, or component. Trigger on: 'start a new project', 'build this app', 'new feature', 'set up the project', 'what stack should I use'. Deviation requires a written reason, not a feeling."
 user-invocable: true
 argument-hint: "[project or feature name]"
 ---
 
 # Stack — Canonical Stack Guardrails
 
-The stack is decided. Every project starts with the same foundation. Decisions that are already made don't need to be made again — they just need to be followed.
+## INPUT
 
-**The only three technology decisions:**
-- **Backend / CMS:** Strapi v5
-- **UI tokens:** frappe-ui (Tailwind preset)
-- **Frontend hosting:** Vercel
+Consumes: `DECISION.md` from `/challenge`
 
-Deviation requires an explicit, written reason. Not a feeling. A reason.
+Uses: what is being built, the minimum version, the constraints.
+
+Can also run standalone at the start of any project.
+
+---
+
+## THE LOOP
+
+**TRIGGER:** Starting a new project, feature, or component. Or when a technology decision needs to be made.
+
+**CYCLE:**
+1. Map what is being built to the stack layer it belongs to
+2. Apply NEVER/ALWAYS guardrails for each layer
+3. Lock setup commands and configuration
+4. Document any deviation with a written reason
+
+**EXIT CONDITION:** Every technology decision is made and locked. STACK.md is written.
+
+---
+
+## THE STACK
+
+Three decisions. Already made. Don't remake them.
+
+```
+Backend / CMS: Strapi v5
+UI tokens:     frappe-ui (Tailwind preset)
+Frontend host: Vercel
+```
+
+Deviation requires a written architectural decision record. Not a feeling.
 
 ---
 
@@ -26,7 +53,7 @@ Deviation requires an explicit, written reason. Not a feeling. A reason.
 │  Next.js / Astro / Vue                          │
 │  frappe-ui Tailwind tokens for all UI           │
 └────────────────┬────────────────────────────────┘
-                 │ HTTP (REST API)
+                 │ HTTP REST
                  │ Authorization: Bearer $STRAPI_API_TOKEN
                  ▼
 ┌─────────────────────────────────────────────────┐
@@ -37,426 +64,236 @@ Deviation requires an explicit, written reason. Not a feeling. A reason.
 └─────────────────────────────────────────────────┘
 ```
 
-**Critical:** Strapi is a stateful Node.js server. It CANNOT run on Vercel serverless. Strapi deploys to Railway/Render/Fly.io. The frontend (Next.js etc.) deploys to Vercel and calls Strapi over HTTP.
+**Critical:** Strapi is a stateful Node.js server. It cannot run on Vercel serverless. Frontend deploys to Vercel. Strapi deploys to Railway/Render/Fly.io.
 
 ---
 
-## GUARDRAILS — WHAT YOU CANNOT DEVIATE FROM
-
-These are non-negotiable without a written architectural decision record:
+## GUARDRAILS
 
 ### NEVER
-- Use a different CMS or backend before exhausting Strapi's capabilities
-- Write custom CSS without first checking if frappe-ui tokens cover it
-- Add a new database (Redis, MongoDB, Elasticsearch) without a `/db-review` pass confirming Postgres can't handle it
-- Deploy Strapi to Vercel (it will not work — stateful server)
+- Use a different CMS before exhausting Strapi's capabilities
+- Write custom CSS without checking frappe-ui tokens first
+- Add Redis, MongoDB, Elasticsearch without a `/db-review` pass confirming Postgres can't handle it
+- Deploy Strapi to Vercel (it will not work)
 - Use `SELECT *` in any Strapi custom query
-- Store money as FLOAT (always integers in smallest unit)
+- Store money as FLOAT (always integers in smallest unit: paise, cents)
 - Build UI without running `/spec` first
-- Skip `/tdd` for any logic that has business rules
+- Skip `/tdd` for any logic with business rules
+- Use Strapi's numeric `id` — always use `documentId` (v5 change)
+- Nest API response data manually — Strapi v5 is flat by default
 
 ### ALWAYS
 - Run `/spec` before writing code for any new feature
-- Run `/db-review` before finalizing any new content type schema
-- Run `/tdd` for any custom controller, service, or business logic
-- Use frappe-ui color tokens (`text-ink-gray-*`, `bg-surface-*`, `border-outline-*`) — never hardcode hex values
-- Use `documentId` (not `id`) in all Strapi v5 API calls
-- Paginate all list queries (`pagination[page]` + `pagination[pageSize]`)
-- Use `populate` explicitly — never assume relations are included
+- Run `/db-review` before finalizing any content type schema
+- Run `/premortem` before any deploy
+- Run `/hot-path` before any endpoint goes to production
+- Validate required env vars at application startup (fail loudly, not silently)
+- Use TIMESTAMPTZ, not TIMESTAMP
+- Paginate all list queries
 
 ---
 
-## BLOCK-BY-BLOCK BUILD ORDER
+## STRAPI V5 PATTERNS
 
-Every project follows this sequence. Do not skip blocks. Do not build Block 3 before Block 1 is verified.
-
+### Content type structure
 ```
-Block 1: Schema & Content Types
-  → Define content types in Strapi admin
-  → Run /db-review on every schema before moving forward
-  → Verify API endpoints return correct shape
-  Output: Strapi running locally, content types created, API confirmed working
-
-Block 2: Auth & Permissions
-  → Set Strapi roles and permissions (public vs. authenticated)
-  → Generate API token for frontend
-  → Test with curl before touching frontend
-  Output: curl commands work for all required endpoints
-
-Block 3: Data Layer (Frontend)
-  → Write typed fetch functions for each Strapi endpoint
-  → Run /tdd on fetch functions (mock HTTP, test shape)
-  → Never consume raw API response in UI — always parse through a typed function
-  Output: Typed data access layer, tested in isolation
-
-Block 4: UI Foundation
-  → Set up frappe-ui Tailwind preset
-  → Build layout shell (nav, sidebar, page wrapper)
-  → Use only frappe-ui tokens — no hardcoded colors or arbitrary spacing
-  Output: Working layout with correct token usage
-
-Block 5: Feature UI
-  → Build each feature page/component on top of Block 4's shell
-  → One component at a time, tested in isolation
-  → Connect to Block 3's data layer
-  Output: Working feature, connected to real data
-
-Block 6: Deployment
-  → Deploy Strapi to Railway/Render with PostgreSQL
-  → Set production environment variables
-  → Deploy frontend to Vercel, point to production Strapi URL
-  → Smoke test every critical path
-  Output: Live, working system
-
-Block 7: Hardening
-  → Run /hot-path on every endpoint used in the main user flow
-  → Run /audit on the frontend
-  → Run /debt-audit after first working version
-  Output: Performance and quality baseline established
+src/api/[resource]/
+├── content-types/[resource]/schema.json
+├── controllers/[resource].ts   ← HTTP only
+├── services/[resource].ts      ← Business logic only
+└── routes/[resource].ts
 ```
 
----
+### V5 breaking changes from v4
 
-## BLOCK 1: STRAPI SETUP
+**documentId, not id:**
+```javascript
+// WRONG (v4)
+strapi.db.query('api::article.article').findOne({ where: { id: 1 } })
 
-### Initial setup
-
-```bash
-npx create-strapi@latest my-project --quickstart
-cd my-project
-npm run develop
+// RIGHT (v5)
+strapi.documents('api::article.article').findOne({ documentId: 'abc123' })
 ```
 
-Admin panel: `http://localhost:1337/admin` (create admin account on first run)
+**Flat response shape:**
+```javascript
+// WRONG (v4 shape)
+article.data.attributes.title
 
-### Content type schema rules
-
-Every content type must have:
-- `slug` field (type: uid, targetField: title) for clean URLs
-- `publishedAt` (automatically added by `draftAndPublish: true`)
-- Explicit field constraints (required, maxLength, etc.)
-
-Example content type schema:
-```json
-{
-  "kind": "collectionType",
-  "collectionName": "articles",
-  "info": {
-    "singularName": "article",
-    "pluralName": "articles",
-    "displayName": "Article"
-  },
-  "options": { "draftAndPublish": true },
-  "attributes": {
-    "title": { "type": "string", "required": true, "maxLength": 255 },
-    "slug": { "type": "uid", "targetField": "title" },
-    "body": { "type": "richtext" },
-    "cover": { "type": "media", "multiple": false, "allowedTypes": ["images"] }
-  }
-}
+// RIGHT (v5 shape — flat)
+article.title
 ```
 
-### Environment variables (`.env`)
+**Always explicit populate:**
+```javascript
+// WRONG: silently returns no relations
+strapi.documents('api::article.article').findMany()
 
-```bash
-HOST=0.0.0.0
-PORT=1337
-APP_KEYS=key1,key2,key3,key4
-API_TOKEN_SALT=<generate>
-ADMIN_JWT_SECRET=<generate>
-TRANSFER_TOKEN_SALT=<generate>
-JWT_SECRET=<generate>
-ENCRYPTION_KEY=<generate>
-
-# Dev: SQLite (default)
-DATABASE_CLIENT=sqlite
-DATABASE_FILENAME=.tmp/data.db
-
-# Prod: Postgres (swap these in production)
-# DATABASE_CLIENT=postgres
-# DATABASE_HOST=...
-# DATABASE_PORT=5432
-# DATABASE_NAME=strapi
-# DATABASE_USERNAME=strapi
-# DATABASE_PASSWORD=...
-# DATABASE_SSL=true
-
-# Media (production)
-# CLOUDINARY_NAME=...
-# CLOUDINARY_KEY=...
-# CLOUDINARY_SECRET=...
-```
-
-Generate secure keys:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
-
-### Media: Cloudinary (production)
-
-```bash
-npm install @strapi/provider-upload-cloudinary
-```
-
-`config/plugins.ts`:
-```ts
-export default ({ env }) => ({
-  upload: {
-    config: {
-      provider: 'cloudinary',
-      providerOptions: {
-        cloud_name: env('CLOUDINARY_NAME'),
-        api_key: env('CLOUDINARY_KEY'),
-        api_secret: env('CLOUDINARY_SECRET'),
-      },
-    },
-  },
+// RIGHT
+strapi.documents('api::article.article').findMany({
+  populate: { author: true, category: true }
 })
 ```
 
----
-
-## BLOCK 2: API PATTERNS
-
-### REST endpoint structure
-
-| Method | URL | Action |
-|--------|-----|--------|
-| GET | `/api/[collection]` | List |
-| GET | `/api/[collection]/:documentId` | Get one |
-| POST | `/api/[collection]` | Create |
-| PUT | `/api/[collection]/:documentId` | Update |
-| DELETE | `/api/[collection]/:documentId` | Delete |
-
-**V5 identifier is `documentId` (string), not numeric `id`.**
-
-### Response shape (v5 — flat, no `.data.attributes` nesting)
-
-```json
-{
-  "data": {
-    "id": 1,
-    "documentId": "cqaabo4pxlrhrjjhxbima0hq",
-    "title": "Hello",
-    "slug": "hello",
-    "createdAt": "...",
-    "updatedAt": "...",
-    "publishedAt": "..."
-  },
-  "meta": {}
-}
+**Always paginate:**
+```javascript
+strapi.documents('api::article.article').findMany({
+  pagination: { page: 1, pageSize: 25 }
+})
 ```
 
-List response: `{ "data": [...], "meta": { "pagination": { "page": 1, "pageSize": 10, "total": 42 } } }`
-
-### Query parameters
+### REST API query patterns
 
 ```
-# Fields
-?fields[0]=title&fields[1]=slug
+GET /api/articles?populate=author&pagination[page]=1&pagination[pageSize]=25
+GET /api/articles/:documentId?populate=deep
+POST /api/articles
+PUT /api/articles/:documentId
+DELETE /api/articles/:documentId
 
-# Populate
-?populate=cover                    # one relation
-?populate=*                        # all top-level
-
-# Filter
-?filters[status][$eq]=published
-?filters[title][$containsi]=hello
+Filters:
+?filters[title][$contains]=hello
 ?filters[publishedAt][$notNull]=true
 
-# Sort
+Sort:
 ?sort=createdAt:desc
-
-# Pagination (always include)
-?pagination[page]=1&pagination[pageSize]=10
-```
-
-### Frontend fetch pattern
-
-```ts
-// lib/strapi.ts — typed data access layer (Block 3)
-
-const STRAPI_URL = process.env.STRAPI_API_URL
-const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN
-
-async function strapiGet<T>(path: string, params?: Record<string, string>): Promise<T> {
-  const url = new URL(`${STRAPI_URL}/api${path}`)
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
-  }
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
-    next: { revalidate: 60 }, // Next.js ISR
-  })
-  if (!res.ok) throw new Error(`Strapi error: ${res.status} on ${path}`)
-  const json = await res.json()
-  return json.data as T
-}
-
-// Usage
-const articles = await strapiGet<Article[]>('/articles', {
-  'fields[0]': 'title',
-  'fields[1]': 'slug',
-  'populate': 'cover',
-  'pagination[page]': '1',
-  'pagination[pageSize]': '10',
-  'sort': 'createdAt:desc',
-})
 ```
 
 ---
 
-## BLOCK 4: FRAPPE-UI SETUP
+## FRAPPE-UI TOKEN REFERENCE
 
-### Installation
-
+### Install
 ```bash
 npm install frappe-ui
-# frappe-ui requires tailwindcss
-npm install -D tailwindcss @tailwindcss/forms @tailwindcss/typography
 ```
 
-### `tailwind.config.js`
-
-```js
+### Tailwind config
+```javascript
 module.exports = {
   presets: [require('frappe-ui/tailwind/preset')],
-  content: [
-    './src/**/*.{js,ts,jsx,tsx,vue,astro}',
-    './node_modules/frappe-ui/src/**/*.{vue,js,ts}',
-  ],
-  darkMode: ['selector', '[data-theme="dark"]'],
+  content: ['./src/**/*.{vue,js,ts,jsx,tsx}', './node_modules/frappe-ui/src/**/*.{vue,js,ts}'],
 }
 ```
 
-### Token reference — use these, nothing else
+### Typography
+| Class | Size |
+|-------|------|
+| `text-2xs` | 11px |
+| `text-xs` | 12px |
+| `text-sm` | 13px |
+| `text-base` | 14px |
+| `text-lg` | 16px |
+| `text-xl` | 18px |
+| `text-2xl` | 20px |
+| `text-3xl` | 24px |
 
-**Text (ink):**
-```
-text-ink-gray-9    → primary text (headings, body)
-text-ink-gray-7    → secondary text
-text-ink-gray-5    → placeholder / disabled
-text-ink-gray-3    → very subtle labels
-text-ink-white     → text on dark/colored surfaces
-```
-
-**Background (surface):**
-```
-bg-surface-white   → page background / cards
-bg-surface-gray-1  → subtle section background
-bg-surface-gray-2  → input backgrounds, hover states
-bg-surface-gray-3  → pressed / active states
-bg-surface-modal   → modal overlay backdrop
-```
-
-**Border (outline):**
-```
-border-outline-gray-1   → card borders, dividers
-border-outline-gray-3   → form inputs, stronger borders
-border-outline-gray-4   → focus rings, active borders
-border-outline-gray-modals → modal borders
-```
-
-**Font sizes (use these, not arbitrary values):**
-```
-text-2xs  → 11px   (badges, timestamps)
-text-xs   → 12px   (captions, meta)
-text-sm   → 13px   (secondary content)
-text-base → 14px   (body text — default)
-text-lg   → 15px   (slightly emphasized body)
-text-xl   → 16px   (subheadings)
-text-2xl  → 20px   (section headings)
-text-3xl  → 24px   (page titles)
-```
-
-**Shadows:**
-```
-shadow-sm   → cards, subtle elevation
-shadow      → dropdowns, popovers
-shadow-md   → modals
-shadow-lg   → floating panels
-shadow-xl   → priority overlays
-```
-
-**Border radius:**
-```
-rounded-sm  → 4px    (tags, badges)
-rounded     → 8px    (inputs, buttons)
-rounded-md  → 10px   (cards)
-rounded-lg  → 12px   (panels)
-rounded-xl  → 16px   (modals)
-```
-
-### Dark mode
-
-Set `data-theme="dark"` on `<html>` to activate dark mode. All frappe-ui tokens automatically switch. No custom dark mode CSS needed.
-
-```html
-<html data-theme="dark">
-```
+### Color tokens
+| Use | Token |
+|-----|-------|
+| Primary text | `text-ink-gray-9` |
+| Secondary text | `text-ink-gray-7` |
+| Muted | `text-ink-gray-5` |
+| Page background | `bg-surface-white` |
+| Card background | `bg-surface-gray-1` |
+| Card border | `border-outline-gray-1` |
+| Primary action | `bg-ink-gray-9 text-white` |
+| Destructive | `text-ink-red-5` |
 
 ---
 
-## BLOCK 6: VERCEL DEPLOYMENT
+## SETUP COMMANDS
 
-### Frontend (Next.js) on Vercel
-
+### New Strapi v5 project
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
+npx create-strapi@latest my-backend --quickstart
+cd my-backend && npm run develop
 ```
 
-Required environment variables in Vercel dashboard:
-```
-STRAPI_API_URL=https://your-strapi.railway.app
-STRAPI_API_TOKEN=your_read_only_token_from_strapi_admin
-```
-
-For client-side access (if needed):
-```
-NEXT_PUBLIC_STRAPI_URL=https://your-strapi.railway.app
+### New Next.js frontend
+```bash
+npx create-next-app@latest my-frontend --typescript --tailwind --app
+cd my-frontend && npm install frappe-ui
 ```
 
-### Strapi on Railway
-
+### Connect frontend to Strapi
+```typescript
+// lib/strapi.ts
+export async function fetchFromStrapi(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${process.env.STRAPI_URL}/api${path}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
+      'Content-Type': 'application/json',
+      ...(options.headers ?? {}),
+    },
+  })
+  if (!res.ok) throw new Error(`Strapi error: ${res.status}`)
+  return res.json()
+}
 ```
-1. Push Strapi to GitHub
-2. New project in Railway → Deploy from GitHub
-3. Add PostgreSQL plugin
-4. Set environment variables (DATABASE_* from Railway's Postgres plugin)
-5. Set all APP_KEYS, JWT secrets, etc.
-6. Deploy
-```
 
-Strapi will be live at a Railway-generated URL. Use that URL as `STRAPI_API_URL` in Vercel.
+### Deploy Strapi to Railway
+
+Environment variables required:
+- `DATABASE_URL`
+- `APP_KEYS`
+- `API_TOKEN_SALT`
+- `ADMIN_JWT_SECRET`
+- `TRANSFER_TOKEN_SALT`
+- `JWT_SECRET`
 
 ---
 
-## INTEGRATION WITH OTHER SKILLS
-
-Run these in sequence for any new feature:
+## 7-BLOCK BUILD SEQUENCE
 
 ```
-/spec        → Define what to build before touching code
-/db-review   → Validate Strapi content type schema before creating it
-/tdd         → Write tests for any custom Strapi service or controller
-/hot-path    → Review frontend fetch functions and API queries after building
-/debt-audit  → After first working version; before adding the next feature
-/diagnose    → When something breaks
+Block 1: Strapi schema (content types, fields, relations)
+Block 2: Strapi permissions (public vs authenticated routes)
+Block 3: Frontend data layer (fetch functions, types)
+Block 4: Frontend UI (frappe-ui components, layout)
+Block 5: Authentication (if needed)
+Block 6: Production deploy (Railway + Vercel, env vars)
+Block 7: Smoke tests (critical paths verified in production)
+```
+
+Build in this order. Don't build the UI before the schema is stable.
+
+---
+
+## OUTPUT: STACK.md
+
+```markdown
+# STACK.md
+
+## Project: [name]
+
+## Stack Decisions
+Backend: Strapi v5 on Railway
+Frontend: Next.js on Vercel
+UI tokens: frappe-ui
+Database: PostgreSQL (prod) / SQLite (dev)
+Media: Cloudinary
+
+## Deviations from canonical stack
+None. [Or: reason for deviation]
+
+## Environment Variables Required
+- STRAPI_URL
+- STRAPI_API_TOKEN
+- DATABASE_URL
+- [project-specific vars]
+
+## Build Sequence
+Block 1: [...]
+Block 7: [...]
+
+## Feeds into
+All downstream skills. STACK.md is the fixed foundation.
 ```
 
 ---
 
-## DECISION LOG — WHEN TO DEVIATE
+## FEEDS INTO
 
-If a situation arises where the stack seems inadequate, do this before deviating:
-
-1. State the specific limitation: "Strapi cannot do X because..."
-2. Confirm it: check Strapi docs, try a plugin, ask in Strapi Discord
-3. If confirmed: document the decision with the reason
-4. Choose the minimal addition: one new tool, not a new paradigm
-
-The bar for deviation is: "This is technically impossible with the canonical stack." Not "this might be slightly easier with X."
+All downstream skills reference STACK.md as the locked foundation. Technology decisions don't get remade mid-build.

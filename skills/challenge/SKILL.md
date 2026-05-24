@@ -1,224 +1,197 @@
 ---
 name: challenge
-description: "Eliminate before implementing. Run before building anything. Forces the question: should this be built at all? Is there a simpler path? Trigger on: 'I need to build X', 'we need a feature for Y', 'the user wants Z', 'can you help me implement', 'we should add'. AI models build what they're asked. This skill asks whether what you're asking for is actually what you need."
+description: "Eliminate before implementing. Run before building anything. Works down an elimination ladder: does this need to exist, does it already exist, can it be done without code, can it be done with less code. Trigger on: 'I need to build X', 'we need a feature for Y', 'can you implement', 'we should add', 'build this'. You reach build-it only after everything above is exhausted."
 user-invocable: true
 argument-hint: "[feature or system being proposed]"
 ---
 
 # Challenge — Eliminate Before You Implement
 
-Jason Fried (37signals): "The only way to get more done is to have less to do. It's not time management, it's obligation elimination."
+## INPUT
 
-Doug McIlroy (Unix philosophy): "Write programs that do one thing and do it well. To do a new job, build afresh rather than complicate old programs by adding new features. Early Unix developers regularly asked: What can we throw out?"
+None. This is the entry point of the build pipeline.
 
-Zerodha has spent $0 on advertising. They have never added a feature to increase engagement metrics. Their product philosophy is user disengagement — only do what is genuinely useful. $1B+ revenue. $500M+ profit. 35 engineers. 16M customers. The constraint produced the moat.
-
-**This skill does one thing:** pushes back before you build.
+Takes: a request to build something.
 
 ---
 
-## THE CHALLENGE PROTOCOL
+## THE LOOP
 
-Run through this before accepting any feature request as a build task.
+**TRIGGER:** Any request to build, implement, or add something.
 
-### Step 1: Restate the problem, not the solution
+**CYCLE:**
+1. Restate the problem behind the request (not the solution)
+2. Work down the elimination ladder — stop at the first level that solves it
+3. Answer the three questions for anything that survives
+4. If "build it": produce DECISION.md and exit
 
-The request is almost always stated as a solution: "Build a notification system." "Add a dashboard." "Create an API for X."
-
-Restate it as a problem: "Users don't know when their payment fails." "Operators can't see transaction volume." "System Y needs data from system X."
-
-If you can't restate it as a problem, you don't understand the request well enough to build it.
-
-**The trap:** building the solution as stated without validating that it solves the actual problem. This produces correct implementations of the wrong thing.
+**EXIT CONDITION:** You have a decision. Build / don't build / build less. Exit with DECISION.md.
 
 ---
 
-### Step 2: The Elimination Ladder
+## STEP 1: RESTATE THE PROBLEM
 
-Work down this ladder. Stop at the first level that solves the problem.
+Every request comes as a solution. "Build a notification system." "Add a dashboard." "Create an API."
+
+Restate it as a problem. "Users don't know when their payment fails." "Operators can't see volume."
+
+If you cannot restate it as a problem, you do not understand the request. Do not proceed.
+
+**The trap:** Building the solution as stated without validating it solves the actual problem. This produces correct implementations of the wrong thing.
+
+---
+
+## STEP 2: THE ELIMINATION LADDER
+
+Work top to bottom. Stop at the first level that solves the problem.
 
 ```
-Level 0: Does this problem need to be solved at all?
-  → Is it a real problem (happens often, causes real pain) or a hypothetical?
-  → Do you have evidence it's a problem? (user complaints, support tickets, data)
+LEVEL 0: Does this need to be solved at all?
+  → Is it a real problem (evidence: user complaints, support tickets, data) or hypothetical?
   → If you don't solve it, what actually happens?
+  → If nothing bad happens: stop here.
 
-Level 1: Does it already exist?
-  → Is there existing functionality that handles this case?
-  → Is there an existing third-party service that solves exactly this?
-  → Is there a library, package, or tool that does this?
+LEVEL 1: Does it already exist?
+  → Existing functionality that handles this case?
+  → Existing third-party that solves exactly this?
+  → Library or tool that does this?
 
-Level 2: Can you solve it without code?
-  → A documented process, a runbook, a manual step
+LEVEL 2: Can you solve it without code?
+  → A documented process or runbook
   → A configuration change
-  → A database query someone runs on demand
-  → An email, a Slack message, a cron job that runs a script
+  → A database query run on demand
+  → A cron job that sends a report
 
-Level 3: Can you solve it with less code than proposed?
+LEVEL 3: Can you solve it with less code?
   → One endpoint instead of a service
   → A SQL view instead of a new table
-  → A cron job instead of an event-driven system
-  → A feature flag instead of a new UI flow
+  → A cron job instead of event-driven
   → Postgres instead of Redis, Redis instead of Kafka
 
-Level 4: Can you build a smaller version that tests the hypothesis?
-  → What's the minimum version that tells you if this is worth building fully?
-  → What can you hardcode, fake, or manually handle until you know it's real?
+LEVEL 4: Can you build a smaller version to test the assumption?
+  → What can be hardcoded or faked until you know it's real?
+  → What is the minimum that tells you whether to build fully?
 
-Level 5: Build it as proposed.
-  → Only reach here if all levels above are genuinely exhausted
+LEVEL 5: Build as proposed.
+  → Only here if all above are genuinely exhausted.
 ```
 
-**You don't get to skip levels.** The pressure to jump to Level 5 is always there. Resist it. The cost of Levels 0–4 is hours. The cost of building Level 5 wrong is weeks.
+You do not skip levels. The pressure to jump to Level 5 is constant. Resist it. Levels 0–4 cost hours. Building Level 5 wrong costs weeks.
 
 ---
 
-### Step 3: The Three Questions
+## STEP 3: THE THREE QUESTIONS
 
-For anything that survives the elimination ladder:
+For anything that reaches Level 5:
 
-**Question 1: What does this enable that isn't possible without it?**
-Not "it's useful" or "users would like it." Specifically: what can users or operators DO after this that they cannot do now? If the answer is vague, the feature is vague.
+**Q1: What does this enable that is not possible without it?**
+Not "it's useful." Specifically: what can users or operators DO after this that they cannot do now? Vague answer = vague feature.
 
-**Question 2: What does this add to the operational surface?**
-Every feature is a surface you maintain forever. Every API endpoint is a contract. Every config option is a combinatorial state. Every integration is a dependency. What does this add to the list of things that can break on a Saturday?
+**Q2: What does this add to the operational surface?**
+Every feature is maintained forever. Every API endpoint is a contract. Every integration is a dependency. Name what goes on the list of things that can break on a Saturday.
 
-**Question 3: Can you take this back?**
-If you build it and it's wrong — wrong design, wrong assumption, wrong priority — can you remove it? API contracts, database schemas, and public-facing features are hard to remove once users depend on them. The harder it is to take back, the higher the bar to build it.
-
----
-
-### Step 4: The Simpler Alternative Test
-
-For any proposed solution, generate a simpler alternative and compare them honestly.
-
-| Dimension | Proposed | Simpler Alternative |
-|---|---|---|
-| Lines of code | ? | ? |
-| New dependencies | ? | ? |
-| New infrastructure | ? | ? |
-| Time to build | ? | ? |
-| Time to operate | ? | ? |
-| Can be rolled back | ? | ? |
-| Solves the actual problem | ? | ? |
-
-If the simpler alternative solves the actual problem at lower cost in all dimensions: build the simpler alternative. The engineering instinct to build the sophisticated version is a bias, not a judgment.
+**Q3: Is this reversible?**
+API contracts, database schemas, and user-visible behavior are hard to remove. The harder it is to take back, the higher the bar to build it.
 
 ---
 
-## SPECIFIC CHALLENGES TO RUN
+## SPECIFIC CHALLENGES
 
 ### "We need a cache"
+Before adding Redis:
+- Run EXPLAIN ANALYZE on the slow query
+- Add the missing index
+- Fix the SELECT * or N+1
+- Try vertical scaling
 
-Before adding Redis or any caching layer:
-- Have you run EXPLAIN ANALYZE on the slow query?
-- Have you added the missing index?
-- Are you fetching more data than you need (SELECT *)?
-- Are you running queries inside a loop (N+1)?
-- Have you tried vertical scaling (more RAM, faster disk)?
-
-If all of these are exhausted and the query is still slow: add a cache. Not before.
+If all exhausted: add a cache. Not before.
 
 ### "We need a microservice"
-
 Before splitting:
-- Does the monolith actually have a performance problem that decomposition solves?
+- Does the monolith have a measurable problem decomposition solves?
 - Can you add a module boundary inside the monolith first?
-- Does the team need independent deployment cycles? (Usually not until 10+ engineers)
-- Are you adding a distributed systems problem to solve a code organization problem?
+- Are you adding distributed systems complexity to solve a code organization problem?
 
-Shopify handles 30TB/minute on Black Friday with a 2.8M-line Ruby monolith. The answer to "should we split this service" is almost always "add a module boundary first."
+Shopify handles 30TB/minute on Black Friday with a 2.8M-line Ruby monolith.
 
-### "We need Kafka / an event queue"
-
+### "We need Kafka"
 Before adding:
-- Is your database table not a valid queue? (Row locking + bounded jobs = valid queue at moderate scale)
-- Do you actually have asymmetric ingestion and processing rates that require buffering?
-- Is this event system for decoupling or for actual throughput?
+- Is your database table not a valid queue? (Row locking + bounded jobs = valid queue)
+- Do you have asymmetric ingestion/processing rates that require buffering?
 
-A Postgres table with a `status` column and a cron job processes thousands of jobs per minute without a message broker. Add the broker when you have evidence Postgres can't keep up, not before.
+A Postgres table with a `status` column and a cron job processes thousands of jobs per minute without a message broker.
 
-### "We need a dashboard / analytics page"
-
+### "We need a dashboard"
 Before building:
-- Can the information be queried from the database on demand?
-- Can it be a scheduled report (email, Slack, CSV) instead of a live UI?
-- Is this used daily or quarterly? (Quarterly use cases don't need real-time UIs)
-- Who specifically is using this, how often, and what decision does it enable?
+- Can the information be queried on demand?
+- Can it be a scheduled report (email, CSV) instead of a live UI?
+- Who uses this, how often, and what decision does it enable?
 
-Build the SQL query first. If someone runs it manually 5 times a day and finds it useful: build the dashboard. Don't build the dashboard on the hypothesis that someone will find it useful.
+Build the SQL query first. If someone runs it manually 5 times a day: build the dashboard. Not before.
 
 ### "We need a notification system"
-
 Before building:
-- How many notification types will actually exist? (If it's 1-3, hardcoding is fine)
-- Can this be a cron job that sends an email directly?
-- Does this need real-time delivery or is a 15-minute delay acceptable?
-- Who receives the notifications? (If it's admins, Slack webhook is sufficient)
+- How many notification types actually exist? (1–3: hardcode them)
+- Can a cron job check a condition and send an email?
+- Is real-time delivery required or is 15-minute delay acceptable?
 
-A notification "system" is a platform. Platforms take months to build and are hard to change. A cron job that checks a condition and sends an email takes a day and can be deleted without consequences.
+A notification "system" is a platform. A cron job is a file. Platform = months. File = a day.
 
 ---
 
-## THE INDIE/BOOTSTRAPPED LENS
+## THE INDIE FILTER
 
-Corporate engineering teams build platforms because they optimize for team autonomy and org chart boundaries. You don't have that problem.
-
-The questions that matter for bootstrapped/indie scale:
+Three questions before committing to any build:
 
 **Can one person understand this entire system?**
-If not, it's too complex for your team size. Complexity has an operational tax paid every time something breaks.
+If no: too complex for your team size. Complexity has an operational tax paid every time something breaks.
 
 **Can this run without a DevOps engineer?**
-Managed services, not self-managed infrastructure. Railway, Render, Vercel — not Kubernetes. The engineering time saved on infrastructure is engineering time spent on product.
+Managed services, not self-managed infrastructure. Railway, Render, Vercel — not Kubernetes.
 
 **Would Pieter Levels build this?**
-Levels.io built Nomad List, Remote OK, and multiple products with a single Node.js server, SQLite (later Postgres), and minimal dependencies. Each product generates hundreds of thousands of dollars. The constraint is the discipline.
-
-**Does this generate complexity that outlasts the feature?**
-Some features are easy to add and hard to remove. The database schema, the API contract, the user-facing behavior — these create expectations. Build features that are easy to reason about and easy to remove if they're wrong.
+Levels.io built Nomad List, Remote OK, and multiple revenue-generating products on a single server with minimal dependencies. The constraint is the discipline.
 
 ---
 
-## ACCEPTANCE CRITERIA FOR BUILDING
+## OUTPUT: DECISION.md
 
-Only proceed to build if:
-1. You've confirmed the problem is real (evidence, not hypothesis)
-2. You've exhausted simpler alternatives
-3. You can state clearly what this enables that isn't possible without it
-4. You've accepted the operational surface it adds
-5. You know whether it's reversible or not
+Produce this file when exiting the loop:
 
-If any of these are unclear: the answer is not "build it anyway." The answer is "get clarity first."
+```markdown
+# DECISION.md
 
----
-
-## OUTPUT FORMAT
-
-```
 ## Request
-[What was asked for]
+[What was asked]
 
 ## Actual Problem
-[The underlying problem, restated without the solution]
+[The problem, restated without the solution]
 
-## Elimination Ladder Result
-Level 0: [Does it need solving? Evidence?]
+## Elimination Ladder
+Level 0: [Real problem? Evidence?]
 Level 1: [Already exists?]
-Level 2: [Solve without code?]
-Level 3: [Solve with less code?]
-Level 4: [Build smaller to test first?]
-Level 5: [Build as proposed — only if above are exhausted]
+Level 2: [Without code?]
+Level 3: [Less code?]
+Level 4: [Smaller version?]
+Level 5: [Build as proposed — reached only if above exhausted]
 
-## Simpler Alternative
-[Concrete alternative with comparison table]
+## Stopped At
+Level [N]: [Why this level is the answer]
 
 ## Recommendation
-[Build as proposed / Build simpler version / Don't build / Get more information first]
+[Build as proposed / Build simpler version / Don't build / Get clarity first]
 
-## If Building: Acceptance Criteria
-- The problem it solves: [specific]
-- The operational surface it adds: [specific]
-- Whether it's reversible: [yes/no, and why]
-- The minimum version: [what can be deferred]
+## If Building: Constraints
+- Problem it solves: [specific]
+- Operational surface added: [specific]
+- Reversible: [yes / no / partial — and why]
+- Minimum version: [what can be deferred]
+- Feeds into: /spec
 ```
+
+---
+
+## FEEDS INTO
+
+`/spec` — consumes DECISION.md to define exactly what is being built.
+`/stack` — consumes DECISION.md to lock the technology decisions.

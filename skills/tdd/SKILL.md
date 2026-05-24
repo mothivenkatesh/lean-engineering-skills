@@ -1,25 +1,34 @@
 ---
 name: tdd
-description: "Test-driven development skill. Use when writing new features, fixing bugs, or building any non-trivial logic. Forces the red-green-refactor loop: failing test first, minimal code to pass, then refactor. Trigger on: 'write tests', 'TDD', 'add feature', 'fix bug', 'write a function that', 'implement X'. The goal is code that is provably correct, not code that seems to work."
+description: "Test-driven development. Use when writing new features, fixing bugs, or building any non-trivial logic. Forces the red-green-refactor loop: failing test first, minimal code to pass, then refactor. Trigger on: 'write tests', 'TDD', 'add feature', 'fix bug', 'write a function that', 'implement X'. The goal is code that is provably correct, not code that seems to work."
 user-invocable: true
 argument-hint: "[feature or bug description]"
 ---
 
 # TDD — Test-Driven Development
 
-You are running the red-green-refactor loop. Code without a failing test first is a guess. Tests are not verification — they are specification. Writing tests after the fact proves the code exists; writing tests first proves the code is correct.
+## INPUT
 
-The discipline: **No code without a failing test. No refactor without green.**
+Consumes: `SPEC.md` from `/spec` and `MODULE_MAP.md` from `/modular`
+
+Uses: GIVEN/WHEN/THEN behaviors from SPEC.md as test specifications. Module interfaces from MODULE_MAP.md to define mock boundaries.
 
 ---
 
 ## THE LOOP
 
+**TRIGGER:** Behavior is defined in SPEC.md. Module boundaries are drawn in MODULE_MAP.md.
+
+**CYCLE (repeats for each behavior):**
+1. RED — Write the smallest failing test that describes one behavior
+2. GREEN — Write the minimum code to make it pass (nothing more)
+3. REFACTOR — Clean up while tests stay green
+4. REPEAT — Pick the next behavior from SPEC.md
+
+**EXIT CONDITION:** Every GIVEN/WHEN/THEN from SPEC.md has a passing test. Every module passes in isolation with mocked dependencies. TEST_REPORT.md is written.
+
 ```
-1. RED    → Write the smallest failing test that describes the behavior
-2. GREEN  → Write the minimum code to make it pass (nothing more)
-3. REFACTOR → Clean up while tests stay green
-4. REPEAT → Next behavior, next test
+RED → GREEN → REFACTOR → REPEAT
 ```
 
 Never skip RED. Never go to REFACTOR while RED. Never write more code than GREEN demands.
@@ -28,43 +37,40 @@ Never skip RED. Never go to REFACTOR while RED. Never write more code than GREEN
 
 ## PHASE 1: UNDERSTAND BEFORE YOU WRITE
 
-Before any test, answer these questions. Don't assume — ask if unclear.
+Before any test, answer:
+1. What is the behavior? (What should the system DO, not how)
+2. What are the inputs? (Types, ranges, edge cases)
+3. What are the expected outputs? (Exact values, shapes, side effects)
+4. What are the failure modes? (What happens when input is wrong)
+5. What already exists? (Read existing tests and code first)
 
-1. **What is the behavior?** (Not "what is the code" — what should the system DO?)
-2. **What are the inputs?** (Types, ranges, edge cases, invalid values)
-3. **What are the expected outputs?** (Exact values, shapes, side effects)
-4. **What are the failure modes?** (What should happen when input is wrong?)
-5. **What already exists?** (Read existing tests and code before writing anything)
-
-State your understanding back before writing a single line:
-> "You want a function that takes X, returns Y, and throws Z when W. I'll start with the happy path."
+State your understanding:
+> "You want a function that takes X, returns Y, and throws Z when W. Starting with the happy path."
 
 ---
 
 ## PHASE 2: RED — The Failing Test
 
-### Rules for a good failing test
-
-- **One behavior per test.** Not "creates a user and sends an email." Two behaviors = two tests.
-- **Name describes the contract.** `should_return_null_when_user_not_found` > `test_user_lookup`.
-- **Arrange / Act / Assert structure.** Set up → call → verify. Never mix these.
-- **Test the interface, not the implementation.** If the test breaks when you rename a private method, the test is wrong.
+### Rules for a good test
+- **One behavior per test.** "Creates a user and sends an email" = two tests.
+- **Name describes the contract.** `should_return_null_when_user_not_found` > `test_user_lookup`
+- **Arrange / Act / Assert.** Set up → call → verify. Never mix these.
+- **Test the interface, not the implementation.** If it breaks when you rename a private method, the test is wrong.
 - **Assert the exact output.** Not "truthy" — the actual value, type, shape.
 
-### Test naming pattern
-
+### Naming pattern
 ```
 [unit]_[action]_[expected outcome]
 login_with_invalid_password_returns_401
 cart_total_with_empty_cart_returns_zero
-parse_date_with_future_date_throws_validation_error
+parse_date_with_future_date_throws_error
 ```
 
-### Run the test. It must FAIL.
+### The test must FAIL before you write implementation
 
-If it passes before you've written implementation code:
-- The test is wrong (testing the wrong thing)
-- Or the behavior already exists (which means you should stop and re-scope)
+If it passes before implementation code exists:
+- The test is wrong (testing the wrong thing), or
+- The behavior already exists (stop and re-scope)
 
 A test that can't fail can't protect you.
 
@@ -72,18 +78,18 @@ A test that can't fail can't protect you.
 
 ## PHASE 3: GREEN — Minimum Code to Pass
 
-The rule: **Write the least code that makes the test pass.**
+Write the least code that makes the test pass.
 
-Not the cleanest. Not the most general. Not the version that handles all future cases. The minimum.
+Not the cleanest. Not the most general. Not the future-proof version. The minimum.
 
-Why? Because if you over-build at GREEN, you've added code that has no test. That code is a liability.
+Why: if you over-build at GREEN, you've added code with no test. That code is a liability.
 
-Common mistakes at GREEN:
-- Adding error handling that no test covers yet → DON'T. Add a test for the error case first.
-- Generalizing for future inputs → DON'T. Write for the current test only.
-- Refactoring while implementing → DON'T. That's what REFACTOR is for.
+Mistakes at GREEN:
+- Adding error handling that no test covers yet → don't. Write the error test first.
+- Generalizing for future inputs → don't. Write for the current test only.
+- Refactoring while implementing → don't. That's what REFACTOR is for.
 
-**Run all tests after every change.** Not just the new one. If any existing test breaks, stop immediately — you've broken a contract.
+Run all tests after every change. Not just the new one. If any existing test breaks: stop. You've broken a contract.
 
 ---
 
@@ -92,29 +98,28 @@ Common mistakes at GREEN:
 Only refactor when all tests are green. The tests are your safety net.
 
 What to look for:
-- Duplication between the new code and existing code
+- Duplication between new code and existing code
 - Unclear variable names or function names
 - Functions doing more than one thing
-- Missing abstractions (three similar blocks of code = extract a function)
-- Wrong abstraction level (business logic leaking into infrastructure layer)
+- Three similar blocks of code (extract a function)
+- Business logic leaking into infrastructure layer
 
 Rules:
-- Run the full test suite after every refactor step. Not at the end — after every change.
-- If any test breaks during refactor, REVERT immediately. The refactor was wrong.
-- Don't add new behavior during REFACTOR. Add a new test first.
+- Run full test suite after every refactor step. Not at the end — after every change.
+- If any test breaks during refactor: revert immediately. The refactor was wrong.
+- Don't add new behavior during REFACTOR. Write a new test first.
 
 ---
 
-## PHASE 5: NEXT BEHAVIOR
+## PHASE 5: BEHAVIOR ORDER
 
-After RED → GREEN → REFACTOR, pick the next behavior. Work outward from the happy path:
+Work outward from the happy path:
 
 ```
-Order:
-1. Happy path (the common case)
+1. Happy path (the common case works correctly)
 2. Edge cases (empty, zero, max, boundary values)
 3. Error cases (invalid input, missing data, permission denied)
-4. Integration (how this connects to other components)
+4. Integration (how this module connects to others)
 ```
 
 Don't jump to error cases before the happy path is solid. Don't write integration tests before unit tests pass.
@@ -123,21 +128,18 @@ Don't jump to error cases before the happy path is solid. Don't write integratio
 
 ## BUG FIX PROTOCOL
 
-When fixing a bug, TDD means:
+When fixing a bug:
+1. Write a test that reproduces the bug. The test fails. This proves the bug exists.
+2. Fix the bug. The test passes.
+3. Full test suite is green.
 
-1. **Write a test that reproduces the bug.** The test fails. This proves the bug exists.
-2. **Fix the bug.** The test passes.
-3. **Verify no regression.** Full test suite is green.
-
-Never fix a bug without a test. A bug without a test will come back.
+Never fix a bug without a test. A bug without a test comes back.
 
 ---
 
 ## TEST DESIGN PATTERNS
 
-### Parameterized tests for multiple inputs
-When the same behavior should hold for multiple inputs, don't copy-paste tests:
-
+### Parameterized tests
 ```python
 @pytest.mark.parametrize("input,expected", [
     (0, "zero"),
@@ -149,27 +151,30 @@ def test_classify_number(input, expected):
 ```
 
 ### Test isolation
-Each test must be independent. If test B relies on test A having run first:
-- Extract the shared setup into a fixture/beforeEach
-- Or inline the setup in each test
+
+Each test must be independent. If test B relies on test A having run first: extract shared setup into a fixture.
 
 Tests that depend on order are a time bomb.
 
 ### Mocking — use sparingly
-Mock external dependencies (APIs, databases, file system) to isolate the unit under test. But:
-- Don't mock your own code. If you're mocking internals, the design is wrong.
-- Don't mock what you could use directly. Mocks that don't match reality are worse than no tests.
+
+Mock external dependencies (APIs, databases, file system). Not your own code.
+
+- Don't mock internals. If you're mocking internals, the design is wrong.
 - Prefer real implementations for fast dependencies (in-memory DB, real objects).
+- Mocks that don't match reality are worse than no tests.
+
+From MODULE_MAP.md: module interfaces define exactly what to mock at each boundary.
 
 ---
 
 ## WHAT GOOD LOOKS LIKE
 
-When you're done with a feature:
-- Every behavior has a named test
+When done with a feature:
+- Every behavior from SPEC.md has a named test
 - Every test is green
 - No code exists without a corresponding test
-- The tests read like documentation of the system's contract
+- Tests read like documentation of the system's contract
 - A new person can understand what the system does by reading the tests alone
 
 ---
@@ -178,41 +183,47 @@ When you're done with a feature:
 
 | Anti-Pattern | Why It Fails |
 |---|---|
-| Writing all tests after the code | You'll unconsciously write tests that fit the code, not tests that verify correctness |
+| Writing all tests after the code | You write tests that fit the code, not tests that verify correctness |
 | Testing implementation details | Refactors break tests; you fix tests instead of writing features |
 | One massive test per function | When it fails, you can't tell which behavior broke |
 | Mocking everything | Tests pass but the system is wrong; mocks drifted from reality |
-| Skipping refactor phase | Code quality degrades; next test is harder to write |
+| Skipping REFACTOR | Code quality degrades; next test is harder to write |
 | "I'll add tests later" | Later never comes. Debt compounds. |
 
 ---
 
-## OUTPUT FORMAT
-
-For each TDD cycle, present:
-
-```
-## Test: [test name]
-[Test code]
-
-Status: FAILING ✗ / PASSING ✓
-
-## Implementation
-[Minimum code to pass]
-
-## Refactor (if applicable)
-[What was cleaned up and why]
-
-## Next behavior
-[What we're testing next]
-```
+## OUTPUT: TEST_REPORT.md
 
 After all behaviors are implemented:
 
+```markdown
+# TEST_REPORT.md
+
+## Module: [name]
+
+## Coverage by Behavior
+| Behavior (from SPEC.md) | Test | Status |
+|-------------------------|------|--------|
+| GIVEN / WHEN / THEN | test_name | PASSING |
+
+## Edge Cases Covered
+[List from SPEC.md edge cases — all should have tests]
+
+## Error Cases Covered
+[List]
+
+## Not Covered (and why)
+[What was intentionally deferred]
+
+## How to run
+[exact command]
+
+## Feeds into
+/hot-path (PERF.md) — tests confirm behavior; hot-path reviews performance
 ```
-## Coverage Summary
-- Behaviors tested: [list]
-- Edge cases covered: [list]
-- Error cases covered: [list]
-- What's NOT covered and why: [list]
-```
+
+---
+
+## FEEDS INTO
+
+`/hot-path` — once all behaviors are tested, review the hot path for performance. Tests prove correctness; hot-path review proves speed.
